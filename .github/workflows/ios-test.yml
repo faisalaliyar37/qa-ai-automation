@@ -1,0 +1,89 @@
+name: iOS Tests
+
+# When to run this workflow
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:        # Allows manual trigger from GitHub UI
+
+jobs:
+  ios-test:
+    name: Run iOS Tests on Simulator
+    runs-on: macos-14       # Free macOS runner with Xcode 15 pre-installed
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 3. Install npm dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Install Appium and XCUITest driver
+      - name: Install Appium & XCUITest driver
+        run: |
+          npx appium driver install xcuitest
+          echo "Appium and XCUITest driver installed"
+
+      # 5. List available simulators (for debugging)
+      - name: List available iOS Simulators
+        run: |
+          xcrun simctl list devices available
+          echo "---"
+          echo "Xcode version:"
+          xcodebuild -version
+
+      # 6. Boot the iOS Simulator
+      - name: Boot iOS Simulator
+        run: |
+          # Find and boot iPhone 15 simulator
+          DEVICE_UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime, devices in data['devices'].items():
+              if '17' in runtime or '18' in runtime:
+                  for d in devices:
+                      if 'iPhone 15' in d['name'] and d['isAvailable']:
+                          print(d['udid'])
+                          sys.exit(0)
+          # Fallback: use any available iPhone
+          for runtime, devices in data['devices'].items():
+              for d in devices:
+                  if 'iPhone' in d['name'] and d['isAvailable']:
+                      print(d['udid'])
+                      sys.exit(0)
+          ")
+          echo "Booting simulator: $DEVICE_UDID"
+          xcrun simctl boot "$DEVICE_UDID" || true
+          # Wait for simulator to be ready
+          sleep 10
+          echo "Simulator booted successfully"
+
+      # 7. Run iOS tests
+      - name: Run iOS tests
+        run: npm run test:ios:ci
+        env:
+          IOS_DEVICE_NAME: 'iPhone 15'
+          IOS_PLATFORM_VERSION: '17.2'
+          # IOS_APP_PATH: './app/Zenda.app'   # Uncomment when you have the iOS app
+
+      # 8. Upload test logs on failure
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-logs
+          path: |
+            logs/
+            *.log
+          retention-days: 7

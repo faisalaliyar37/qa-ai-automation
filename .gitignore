@@ -1,0 +1,7 @@
+node_modules
+venv/
+app/*.apk
+*.zip
+inspect_output.txt
+mobile_page_source_*.xml
+page_source.html
