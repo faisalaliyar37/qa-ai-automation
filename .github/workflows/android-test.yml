@@ -31,10 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install Appium & UiAutomator2 driver
-        run: |
-          npx appium driver list --installed | grep uiautomator2 || npx appium driver install uiautomator2
-          echo "Appium and UiAutomator2 driver checked/installed"
+      # Appium driver is already installed via package.json during npm install
 
       - name: Enable KVM for Android Emulator
         run: |
