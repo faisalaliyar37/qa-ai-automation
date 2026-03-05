@@ -32,8 +32,8 @@ jobs:
       # 4. Install Appium and XCUITest driver
       - name: Install Appium & XCUITest driver
         run: |
-          npx appium driver install xcuitest
-          echo "Appium and XCUITest driver installed"
+          npx appium driver list --installed | grep xcuitest || npx appium driver install xcuitest
+          echo "Appium and XCUITest driver checked/installed"
 
       # 5. List available simulators (for debugging)
       - name: List available iOS Simulators

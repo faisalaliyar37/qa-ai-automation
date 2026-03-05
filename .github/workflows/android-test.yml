@@ -33,8 +33,8 @@ jobs:
 
       - name: Install Appium & UiAutomator2 driver
         run: |
-          npx appium driver install uiautomator2
-          echo "Appium and UiAutomator2 driver installed"
+          npx appium driver list --installed | grep uiautomator2 || npx appium driver install uiautomator2
+          echo "Appium and UiAutomator2 driver checked/installed"
 
       - name: Enable KVM for Android Emulator
         run: |
